@@ -1,0 +1,62 @@
+﻿@model ProductManagement.Models.PIMModel
+
+@{
+    ViewBag.Title = "Home";
+}
+
+@section featured {
+    <section class="featured">
+        <div class="content-wrapper">
+            <hgroup class="title">
+                <h1>@ViewBag.Title.</h1>
+                <h2>Manage your product information</h2>
+            </hgroup>
+            <p>
+                Here you will be able to download the spreadsheet template and upload your product information.
+            </p>
+            <p>
+                <b>NOTE:</b> Tech bullets are optional. All other fields are required. Information will appear 
+                exactly as entered into the Marketing Description and Tech Bullets fields of the spreadsheet, 
+                so feel free to use bullets and multiple lines.
+            </p>
+        </div>
+    </section>
+}
+@using (Html.BeginForm("Index", "Home", FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    @Html.ValidationSummary()
+    if (Request.IsAuthenticated) {
+        <h3>Product update process:</h3>
+        <ol class="round">
+            <li class="one">
+                <h5>Download Template</h5>
+                Download the <a href="~/Templates/PIM_Template.xlsx">template spreadsheet</a> and fill out all of your 
+                product information. If you already have one filled out just make changes to that and reupload below. 
+                This will update existing products and add the new ones.
+            </li>
+
+            <li class="two">
+                <h5>Upload Template</h5>
+                After filling out all of your information, select which brand these products should be 
+                added to/updated for then upload the spreadsheet back to the site.
+                <div>
+                    @Html.LabelFor(model => model.Brands, new { @class = "inline" })
+                    @Html.DropDownListFor(model => model.BrandId, Model.Brands, "Select brand")
+                </div>
+                <div>
+                    <label class="inline">Upload spreadsheet:</label>
+                    <input type="file" name="file" />
+                    <input type="submit" value="Submit" />
+                </div>
+                <span class="message-error">@ViewBag.ErrorMessage</span>
+            </li>
+
+            <li class="three">
+                <h5>View Your Data</h5>
+                Once uploaded, you can view your data on the <a href="~/Views/Home/ViewData">View Products</a> tab.
+            </li>
+        </ol>
+    } else {
+        <h2>Please @Html.ActionLink("log in", "Login", "Account") or @Html.ActionLink("register", "Register", "Account") to continue.</h2>
+    }
+}

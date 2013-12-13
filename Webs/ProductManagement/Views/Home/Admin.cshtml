@@ -1,0 +1,42 @@
+﻿@{
+    ViewBag.Title = "Admin";
+}
+
+@if (Request.IsAuthenticated && Roles.GetRolesForUser(User.Identity.Name).Contains("Administrator")) {
+    using (Html.BeginForm("Admin", "Home", FormMethod.Post, new { id = "Admin" }))
+    {
+        <input type="button" id="purge" value="Purge db data" />
+        <div>@ViewBag.Purged</div>
+    }
+    
+    <table style="border: double">
+        <thead>
+            <tr>
+                <td>Username</td>
+                <td>Email</td>
+                <td>Role</td>
+                <td>Created</td>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+}
+else
+{
+    <h2>You do not have access to this page.</h2>
+}
+
+<script type="text/javascript">
+    $("#purge").click(function () {
+        var form = $("form#Admin");
+        form.attr("action", "/Home/Purge");
+        form.submit();
+    });
+</script>

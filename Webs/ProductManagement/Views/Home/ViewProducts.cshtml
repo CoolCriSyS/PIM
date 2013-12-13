@@ -1,0 +1,205 @@
+﻿@model ProductManagement.Models.PIMModel
+
+@{
+    ViewBag.Title = "View Products";
+}
+
+@section featured {
+    <section class="featured">
+        <div class="content-wrapper">
+            <hgroup class="title">
+                <h1>@ViewBag.Title.</h1>
+                <h2>Table of all styles and marketing info.</h2>
+            </hgroup>
+            <h4>Clicking a style in the table below will load its data into the textboxes where you can change info 
+                and hit Update. You can also add a new style by just filling out the textboxes and hitting Save.
+            </h4>
+            @if (ViewBag.Added > 0 || ViewBag.Updated > 0) {
+            <h2 style="color: #35aa06">@ViewBag.Added records added, @ViewBag.Updated updated.</h2>
+            }
+        </div>
+    </section>
+}
+@if (Request.IsAuthenticated)
+{
+    @Html.ValidationSummary(true)
+    <div class="margintb"><input id="showtbl" type="button" value="Add a style" /></div>
+    <table id="inputtbl" style="display: none">
+        <tr>
+            <td>StyleId</td>
+            <td><input type="text" id="txtStyleId" data-bind="value: $root.StyleId" disabled="disabled" style="width: 50px" /></td>
+        </tr>
+        <tr>
+            <td>Brand</td>
+            <td>@Html.DropDownList("Brands", Model.Brands, "Select brand", new { data_bind = "value: $root.BrandId" })</td>
+        </tr>
+        <tr>
+            <td>Pattern Name</td>
+            <td><input type="text" id="txtPatternName" data-bind="value: $root.PatternName" /></td>
+        </tr>
+        <tr>
+            <td>Style Number</td>
+            <td><input type="text" id="txtStockNumber" data-bind="value: $root.StockNumber" style="width: 120px" /></td>
+        </tr>
+        <tr>
+            <td>Marketing Description</td>
+            <td><textarea id="txtMktDesc" data-bind="value: $root.MarketingDescription"></textarea></td>
+        </tr>
+        <tr>
+            <td>Tech Bullets</td>
+            <td><textarea id="txtTechBullets" data-bind="value: $root.TechBullets"></textarea></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td>
+                <button data-bind="click: addStyle">Save</button>
+                <button data-bind="click: $root.updateStyle">Update</button>
+            </td>
+        </tr>
+    </table>
+    <h2 id="responsemsg"></h2>
+    <table style="border: double" data-bind="visible: Styles().length>0">
+        <thead>
+            <tr>
+                <td>Pattern Name</td>
+                <td>Style Number</td>
+                <td>Marketing Description</td>
+                <td>Tech Bullets</td>
+                <td></td>
+            </tr>
+        </thead>
+        <tbody data-bind="foreach: Styles">
+            <tr style="border: solid" data-bind="click: $root.getStyle">
+                <td data-bind="text: PatternName"></td>
+                <td data-bind="text: StockNumber"></td>
+                <td data-bind="text: MarketingDescription"></td>
+                <td data-bind="text: TechBullets"></td>
+                <td>
+                    <button data-bind="click: $root.deleteStyle">Delete</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+} else {
+    <h2>Please @Html.ActionLink("log in", "Login", "Account") or @Html.ActionLink("register", "Register", "Account") to continue.</h2>
+}
+
+
+<script type="text/javascript">
+    var StyleViewModel = function () {
+        var self = this;
+        self.StyleId = ko.observable("0");
+        self.StockNumber = ko.observable("");
+        self.PatternName = ko.observable("");
+        self.MarketingDescription = ko.observable("");
+        self.TechBullets = ko.observable("");
+        self.BrandId = ko.observable();
+
+        var StyleData = {
+            StyleId: self.StyleId,
+            StockNumber: self.StockNumber,
+            PatternName: self.PatternName,
+            MarketingDescription: self.MarketingDescription,
+            TechBullets: self.TechBullets,
+            LastUpdated: GetDate(),
+            LastUpdatedBy: GetName(),
+            BrandId: self.BrandId
+        };
+
+        self.Styles = ko.observableArray([]);
+
+        getStyles();
+
+        self.addStyle = function () {
+            $.ajax({
+                type: "POST",
+                url: "/api/StyleAPI",
+                data: ko.toJSON(StyleData),
+                contentType: "application/json",
+                success: function (data) {
+                    $("#responsemsg").show().css("color", "#35aa06").html("Style added successfully").fadeOut(5000);
+                    self.StyleId(data.StyleId);
+                    getStyles();
+                },
+                error: function (error) {
+                    alert("ADD failed: " + error.status +" "+ error.statusText +"\r\n"+ error.responseText);
+                }
+            });
+        };
+
+        self.updateStyle = function () {
+            $.ajax({
+                type: "PUT",
+                url: "/api/StyleAPI/" + self.StyleId(),
+                data: ko.toJSON(StyleData),
+                contentType: "application/json",
+                success: function (data) {
+                    $("#responsemsg").show().css("color", "#35aa06").html("Style updated successfully").fadeOut(5000);
+                    getStyles();
+                },
+                error: function (error) {
+                    alert("UPDATE failed: " + error.status + " " + error.statusText + "\r\n" + error.responseText);
+                }
+            });
+        };
+
+        self.deleteStyle = function (style) {
+            $.ajax({
+                type: "DELETE",
+                url: "/api/StyleAPI/" + style.StyleId,
+                success: function (data) {
+                    $("#responsemsg").show().css("color", "#35aa06").html("Style deleted successfully").fadeOut(5000);
+                    getStyles();
+                },
+                error: function (error) {
+                    alert("DELETE failed: " + error.status + " " + error.statusText + "\r\n" + error.responseText);
+                }
+            });
+        };
+
+        function getStyles(brandId) {
+            $.ajax({
+                type: "GET",
+                url: "/api/StyleAPI/",
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: function (data) {
+                    self.Styles(data);
+                },
+                error: function (error) {
+                    alert("GET failed: " + error.status + " " + error.statusText + "\r\n" + error.responseText);
+                }
+            });
+        }
+
+        function GetDate() {
+            return "@DateTime.Now";
+        }
+
+        function GetName() {
+            return "@User.Identity.Name";
+        }
+
+        // Executed when record is selected from the table
+        self.getStyle = function (style) {
+            self.StyleId(style.StyleId),
+            self.StockNumber(style.StockNumber),
+            self.PatternName(style.PatternName),
+            self.MarketingDescription(style.MarketingDescription),
+            self.TechBullets(style.TechBullets),
+            self.BrandId(style.BrandId)
+
+            $("#inputtbl").show();
+            $('html, body').animate({
+                scrollTop: $("#inputtbl").offset().top
+            }, 500);
+        };
+    };
+    $(document).ready(function () {
+        ko.applyBindings(new StyleViewModel());
+
+        $("#showtbl").click(function () {
+            $("#inputtbl").toggle("slow", function () { });
+        });
+    });
+</script>
